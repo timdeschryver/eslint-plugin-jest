@@ -10,36 +10,25 @@ module.exports = {
     fixable: 'code',
   },
   create(context) {
+    // TODO what's a better name for this
+    function reportWithFixer(node, name) {
+      context.report({
+        fix(fixer) {
+          return [fixer.replaceText(node.callee.property, name)];
+        },
+        message: 'Use {{ name }}() instead',
+        data: { name },
+        node: node.callee.property,
+      });
+    }
     return {
-      CallExpression(node) {
-        const propertyName = node.callee.property && node.callee.property.name;
-        if (propertyName === 'toMatchSnapshot') {
-          context.report({
-            fix(fixer) {
-              return [
-                fixer.replaceText(
-                  node.callee.property,
-                  'toMatchInlineSnapshot'
-                ),
-              ];
-            },
-            message: 'Use toMatchInlineSnapshot() instead',
-            node: node.callee.property,
-          });
-        } else if (propertyName === 'toThrowErrorMatchingSnapshot') {
-          context.report({
-            fix(fixer) {
-              return [
-                fixer.replaceText(
-                  node.callee.property,
-                  'toThrowErrorMatchingInlineSnapshot'
-                ),
-              ];
-            },
-            message: 'Use toThrowErrorMatchingInlineSnapshot() instead',
-            node: node.callee.property,
-          });
-        }
+      'CallExpression[callee.property.name="toMatchSnapshot"]'(node) {
+        reportWithFixer(node, 'toMatchInlineSnapshot');
+      },
+      'CallExpression[callee.property.name="toThrowErrorMatchingSnapshot"]'(
+        node
+      ) {
+        reportWithFixer(node, 'toThrowErrorMatchingInlineSnapshot');
       },
     };
   },
